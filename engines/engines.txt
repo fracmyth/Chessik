@@ -1,0 +1,1 @@
+This is the engines directory. You may add other chess engines.
