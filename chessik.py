@@ -42,8 +42,9 @@ pygame.init()
 
 # Set up the screen
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Chess Board")
-
+pygame.display.set_caption("Chessik")
+icon_image = pygame.image.load("images/wK.png")  # Replace "icon.png" with the path to your icon image
+pygame.display.set_icon(icon_image)
 # Load and resize piece images
 piece_images = {}
 for name, path in PIECE_IMAGES.items():
