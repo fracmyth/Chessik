@@ -8,7 +8,7 @@ from tkinter import simpledialog
 import os
 # Define constants for the screen width and height
 SCREEN_WIDTH = 850  # Increased width to accommodate the evaluation bar
-SCREEN_HEIGHT = 900
+SCREEN_HEIGHT = 850
 NAVBAR_HEIGHT = 50
 
 # Define constants for the board and square size
