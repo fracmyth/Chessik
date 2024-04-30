@@ -19,13 +19,10 @@ selected_piece_x = 0
 selected_piece_y = 0
 # Define the colors
 WHITE = (255, 255, 255)
-O = (255, 87, 51)
-S = (255, 255, 255)
-O = (255, 87, 51)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
 RO = (61, 230, 223)
+YELLOW = (255, 255, 0)
 # Define colors for the navbar
 NAVBAR_COLOR = (200, 200, 200)
 NAVBAR_TEXT_COLOR = BLACK
@@ -52,11 +49,62 @@ for name, path in PIECE_IMAGES.items():
     piece_image = pygame.image.load(path)
     piece_image = pygame.transform.scale(piece_image, (SQUARE_SIZE, SQUARE_SIZE))
     piece_images[name] = piece_image
-
+engine = chess.engine.SimpleEngine.popen_uci(f"engines/Stockfish16.1.exe")
 # Initialize Stockfish engine
-with open("engine.txt", "r") as f:
-    engine = chess.engine.SimpleEngine.popen_uci(f"engines/{f.read()}")
-    se = f.read()
+try:
+    with open("conf/engine.txt", "r") as f:
+        engine = chess.engine.SimpleEngine.popen_uci(f"engines/{f.read()}")
+        se = f.read()
+except:
+    pass
+try:
+    with open('conf/whiter.txt','r') as f:
+        whiter = int(f.read())
+except:
+    whiter=255
+try:
+    with open('conf/whiteg.txt','r') as f:
+        whiteg = int(f.read())
+except:
+    whiteg=255
+try:
+    with open('conf/whiteb.txt','r') as f:
+        whiteb = int(f.read())
+except:
+    whiteb=255
+try:
+    with open('conf/blackr.txt','r') as f:
+        blackr = int(f.read())
+except:
+    blackr=255
+try:
+    with open('conf/blackg.txt','r') as f:
+        blackg = int(f.read())
+except:
+    blackg=87
+try:
+    with open('conf/blackb.txt','r') as f:
+        blackb = int(f.read())
+except:
+    blackb=51
+try:
+    with open('conf/arrr.txt','r') as f:
+        arrr = int(f.read())
+except:
+    arrr=0
+try:
+    with open('conf/arrg.txt','r') as f:
+        arrg = int(f.read())
+except:
+    arrg=0  
+try:
+    with open('conf/arrb.txt','r') as f:
+        arrb = int(f.read())
+except:
+    arrb=255
+S = (whiter, whiteg, whiteb)
+O = (blackr, blackg, blackb)
+BLUE = (arrr, arrg, arrb)
 # Function to draw the hessboard
 def draw_board():
     for row in range(BOARD_SIZE):
@@ -135,10 +183,9 @@ def promote_pawn(board, square):
     promotion_square = FILE_MAP[promotion_square] + RANK_MAP[7 - chess.square_rank(promotion_square)]
     move = chess.Move.from_uci(f"{chess.SQUARE_NAMES[square]}{promotion_square}{promotion_piece}")
     board.push(move)
-
 # Function to draw an arrow indicating the best move
-def draw_arrow(start_pos, end_pos):
-    pygame.draw.line(screen, BLUE, start_pos, end_pos, 5)  # Main line of the arrow
+def draw_arrow(start_pos, end_pos, color):
+    pygame.draw.line(screen, color, start_pos, end_pos, 5)  # Main line of the arrow
 
     # Calculate positions for the arrowhead
     angle = math.atan2(end_pos[1] - start_pos[1], end_pos[0] - start_pos[0])
@@ -247,8 +294,57 @@ def blackbg():
         return int(fen_input.strip())
     else:
         return None
-# Function to generate the PGN table
+def arrrg():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    fen_input = simpledialog.askstring("Arrow R", f"Input the new R(Red) value of the arrow")
+    if fen_input:
+        return int(fen_input.strip())
+    else:
+        return None
+def arrgg():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    fen_input = simpledialog.askstring("Arrow G", f"Input the new G(Green) value of the arrow")
+    if fen_input:
+        return int(fen_input.strip())
+    else:
+        return None
+def arrbg():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    fen_input = simpledialog.askstring("Arrow B", f"Input the new B(Blue) value of the arrow")
+    if fen_input:
+        return int(fen_input.strip())
+    else:
+        return None
+def draw_aarrow(screen, color, start_pos, end_pos):
+    # Draw main line of the arrow
+    pygame.draw.line(screen, YELLOW, start_pos, end_pos, 5)
 
+    # Calculate angle and length of the arrow
+    angle = math.atan2(end_pos[1] - start_pos[1], end_pos[0] - start_pos[0])
+    arrow_length = 15
+    arrow_angle = math.pi / 6  # Angle of arrowhead
+
+    # Calculate positions for the arrowhead
+    arrowhead1 = (
+        end_pos[0] - arrow_length * math.cos(angle - arrow_angle),
+        end_pos[1] - arrow_length * math.sin(angle - arrow_angle),
+    )
+    arrowhead2 = (
+        end_pos[0] - arrow_length * math.cos(angle + arrow_angle),
+        end_pos[1] - arrow_length * math.sin(angle + arrow_angle),
+    )
+
+    # Draw arrowhead
+    pygame.draw.line(screen, color, end_pos, arrowhead1, 5)
+    pygame.draw.line(screen, color, end_pos, arrowhead2, 5)
+
+# Function to generate the PGN table
+right_mouse_pressed = False
+first_square = None
+second_square = None
 # Function to draw the PGN table on the left side of the screen
 chess_board = chess.Board()
 running = True
@@ -256,49 +352,84 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Left mouse button
+
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
-            if y < NAVBAR_HEIGHT:
-                # Handle navbar click
-                pass
-            else:
-                try:
-                    algebraic_notation = screen_to_algebraic(x, y)
+            if event.button == 3:  # Right mouse button
+                # Right-click to select squares
+                x, y = event.pos
+                algebraic_notation = screen_to_algebraic(x, y)
+                if algebraic_notation != "no":
                     square = chess.parse_square(algebraic_notation)
-                    piece = chess_board.piece_at(square)
-                except:
+                    if first_square is None:
+                        first_square = square
+                    elif second_square is None:
+                        second_square = square
+                        # Draw arrow between the two selected squares
+                        start_pos = (
+                            chess.square_file(first_square) * SQUARE_SIZE + SQUARE_SIZE // 2,
+                            (7 - chess.square_rank(first_square)) * SQUARE_SIZE + SQUARE_SIZE // 2 + NAVBAR_HEIGHT,
+                        )
+                        end_pos = (
+                            chess.square_file(second_square) * SQUARE_SIZE + SQUARE_SIZE // 2,
+                            (7 - chess.square_rank(second_square)) * SQUARE_SIZE + SQUARE_SIZE // 2 + NAVBAR_HEIGHT,
+                        )
+                        print(start_pos, end_pos)
+                        draw_aarrow(screen,YELLOW,start_pos,end_pos)
+                        pygame.display.flip()
+                        # Reset selected squares
+                        first_square = None
+                        second_square = None
+            if event.button == 1:  # Left mouse button
+                if y < NAVBAR_HEIGHT:
+                    # Handle navbar click
                     pass
-                if piece and piece.color == chess_board.turn:
-                    selected_piece = square
-                    valid_moves = [(move.from_square, move.to_square) for move in chess_board.legal_moves if move.from_square == square]
-                    # Calculate the offset from the top-left corner of the selected piece
-                    drag_offset_x = x - (chess.square_file(selected_piece) * SQUARE_SIZE)
-                    drag_offset_y = y - ((7 - chess.square_rank(selected_piece)) * SQUARE_SIZE + NAVBAR_HEIGHT)
-                elif selected_piece and square in valid_moves:
-                    move = chess.Move(selected_piece, square)
-                    if move in chess_board.legal_moves:
-                        if chess.square_rank(square) == 0 or chess.square_rank(square) == 7:
-                            if chess_board.piece_at(selected_piece).symbol().lower() == 'p':
-                                promote_pawn(chess_board, square)
+                else:
+                    try:
+                        algebraic_notation = screen_to_algebraic(x, y)
+                        square = chess.parse_square(algebraic_notation)
+                        piece = chess_board.piece_at(square)
+                    except:
+                        pass
+                    if piece and piece.color == chess_board.turn:
+                        selected_piece = square
+                        valid_moves = [(move.from_square, move.to_square) for move in chess_board.legal_moves if move.from_square == square]
+                        # Calculate the offset from the top-left corner of the selected piece
+                        drag_offset_x = x - (chess.square_file(selected_piece) * SQUARE_SIZE)
+                        drag_offset_y = y - ((7 - chess.square_rank(selected_piece)) * SQUARE_SIZE + NAVBAR_HEIGHT)
+                    elif selected_piece and square in valid_moves:
+                        move = chess.Move(selected_piece, square)
+                        if move in chess_board.legal_moves:
+                            if chess.square_rank(square) == 0 or chess.square_rank(square) == 7:
+                                if chess_board.piece_at(selected_piece).symbol().lower() == 'p':
+                                    promote_pawn(chess_board, square)
+                                else:
+                                    update_board(chess_board, move.uci())
                             else:
                                 update_board(chess_board, move.uci())
-                        else:
-                            update_board(chess_board, move.uci())
-                        selected_piece = None
-                        valid_moves.clear()  # Clear selection after move
-                        # Reanalyze position after move
-                        result = engine.analyse(chess_board, chess.engine.Limit(time=0.1))
-                        try:
-                            evaluation_score = int(result["score"].relative.score())
-                            if chess_board.turn == False:
-                                evaluation_score  *= -1
-                        except:
-                            evaluation_score = result["score"].relative.score()
-                        best_move = result["pv"][0] if len(result["pv"]) > 0 else None
+                            selected_piece = None
+                            valid_moves.clear()  # Clear selection after move
+                            # Reanalyze position after move
+                            result = engine.analyse(chess_board, chess.engine.Limit(time=0.1))
+                            try:
+                                evaluation_score = int(result["score"].relative.score())
+                                if chess_board.turn == False:
+                                    evaluation_score  *= -1
+                            except:
+                                evaluation_score = result["score"].relative.score()
+                            best_move = result["pv"][0] if len(result["pv"]) > 0 else None
 
-                else:
-                    selected_piece = None
-                    valid_moves.clear()
+                    else:
+                        selected_piece = None
+                        valid_moves.clear()
+            elif event.button == 3:  # Right mouse button
+                # Draw arrows with right-click
+                if selected_piece is not None:
+                    x, y = event.pos
+                    new_square = chess.parse_square(screen_to_algebraic(x, y))
+                    start_pos = (chess.square_file(selected_piece) * SQUARE_SIZE + SQUARE_SIZE // 2, (7 - chess.square_rank(selected_piece)) * SQUARE_SIZE + SQUARE_SIZE // 2 + NAVBAR_HEIGHT)
+                    end_pos = (chess.square_file(new_square) * SQUARE_SIZE + SQUARE_SIZE // 2, (7 - chess.square_rank(new_square)) * SQUARE_SIZE + SQUARE_SIZE // 2 + NAVBAR_HEIGHT)
+                    draw_arrow(start_pos, end_pos, BLUE)
         elif event.type == pygame.MOUSEMOTION and selected_piece is not None:
             # Update the position of the selected piece while dragging
             x, y = event.pos
@@ -334,7 +465,7 @@ while running:
             if event.key == pygame.K_e:
                 engine_input = display_engine_input()
                 if engine_input:
-                    with open('engine.txt','w') as f:
+                    with open('conf/engine.txt','w') as f:
                         f.write(engine_input)
                     se = engine_input
                     engine = chess.engine.SimpleEngine.popen_uci(f"engines/{engine_input}")
@@ -347,8 +478,30 @@ while running:
                 blackr = blackrg()
                 blackg = blackgg()
                 blackb = blackbg()
+                arrr = arrrg()
+                arrg = arrgg()
+                arrb = arrbg()
                 S = (whiter, whiteg, whiteb)
                 O = (blackr, blackg, blackb)
+                BLUE = (arrr, arrg, arrb)
+                with open('conf/whiter.txt','w') as f:
+                    f.write(str(whiter))
+                with open('conf/whiteg.txt','w') as f:
+                    f.write(str(whiteg))
+                with open('conf/whiteb.txt','w') as f:
+                    f.write(str(whiteb))
+                with open('conf/blackr.txt','w') as f:
+                    f.write(str(blackr))
+                with open('conf/blackg.txt','w') as f:
+                    f.write(str(blackg))
+                with open('conf/blackb.txt','w') as f:
+                    f.write(str(blackb))
+                with open('conf/arrr.txt','w') as f:
+                    f.write(str(arrr))
+                with open('conf/arrg.txt','w') as f:
+                    f.write(str(arrg))
+                with open('conf/arrb.txt','w') as f:
+                    f.write(str(arrb))
     screen.fill(WHITE)
     # Draw navbar
     pygame.draw.rect(screen, NAVBAR_COLOR, pygame.Rect(0, 0, SCREEN_WIDTH, NAVBAR_HEIGHT))
@@ -380,7 +533,7 @@ while running:
         if best_move is not None:
             start_pos = (chess.square_file(best_move.from_square) * SQUARE_SIZE + SQUARE_SIZE // 2, (7 - chess.square_rank(best_move.from_square)) * SQUARE_SIZE + SQUARE_SIZE // 2 + NAVBAR_HEIGHT)
             end_pos = (chess.square_file(best_move.to_square) * SQUARE_SIZE + SQUARE_SIZE // 2, (7 - chess.square_rank(best_move.to_square)) * SQUARE_SIZE + SQUARE_SIZE // 2 + NAVBAR_HEIGHT)
-            draw_arrow(start_pos, end_pos)
+            draw_arrow(start_pos, end_pos, BLUE)
 
         # Draw evaluation score
         if evaluation_score is not None:
@@ -399,6 +552,7 @@ while running:
     # Draw PGN table
 
     pygame.display.flip()
+    pygame.display.update()
 
 # Quit Pygame
 pygame.quit()
