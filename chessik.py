@@ -6,17 +6,21 @@ import math
 import tkinter as tk
 from tkinter import simpledialog
 import os
+import random
 # Define constants for the screen width and height
-SCREEN_WIDTH = 850  # Increased width to accommodate the evaluation bar
-SCREEN_HEIGHT = 850
-NAVBAR_HEIGHT = 50
+SCREEN_WIDTH = 850
+SCREEN_HEIGHT = 950
+NAVBAR_HEIGHT = 150
 
 # Define constants for the board and square size
 BOARD_SIZE = 8
 SQUARE_SIZE = 800 // BOARD_SIZE
-
+selected_piece_x = 0
+selected_piece_y = 0
 # Define the colors
 WHITE = (255, 255, 255)
+O = (255, 87, 51)
+S = (255, 255, 255)
 O = (255, 87, 51)
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
@@ -32,14 +36,11 @@ PIECE_IMAGES = {
     'wK': 'images/wK.png', 'wQ': 'images/wQ.png', 'wR': 'images/wR.png',
     'wB': 'images/wB.png', 'wN': 'images/wN.png', 'wP': 'images/wP.png'
 }
-
+selected_piece = None
 # Define mappings for screen coordinates to algebraic notation
 FILE_MAP = {0: 'a', 1: 'b', 2: 'c', 3: 'd', 4: 'e', 5: 'f', 6: 'g', 7: 'h'}
 RANK_MAP = {0: '1', 1: '2', 2: '3', 3: '4', 4: '5', 5: '6', 6: '7', 7: '8'}
-
-# Initialize Pygame
 pygame.init()
-
 # Set up the screen
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Chessik")
@@ -97,11 +98,9 @@ def screen_to_algebraic(x, y):
 
 # Function to update the board based on algebraic notation
 def update_board(board, move):
-    try:
-        uci = chess.Move.from_uci(move)
-        board.push(uci)
-    except:
-        pass
+    uci = chess.Move.from_uci(move)
+    san = chess_board.san(uci)
+    board.push(uci)
 
 # Function to handle pawn promotion
 def promote_pawn(board, square):
@@ -156,20 +155,22 @@ def draw_arrow(start_pos, end_pos):
 def draw_evaluation_bar(score):
     bar_width = 50
     max_bar_height = SCREEN_HEIGHT - NAVBAR_HEIGHT * 2
-    score_int = score/100
+    try:
+        score_int = score/100
 
-    # Determine bar height for white and black based on score magnitude
-    if score_int >= 0:
-        white_bar_height = max_bar_height/2+max_bar_height/20*score_int
-        black_bar_height = max_bar_height-white_bar_height
-    else:
-        black_bar_height = max_bar_height/2+max_bar_height/20*abs(score_int)
-        white_bar_height = max_bar_height-black_bar_height
-    # Draw white evaluation bar at the bottom
-    pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(SCREEN_WIDTH - bar_width, SCREEN_HEIGHT - NAVBAR_HEIGHT - white_bar_height, bar_width, white_bar_height))
-    # Draw black evaluation bar at the top
-    pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(SCREEN_WIDTH - bar_width, NAVBAR_HEIGHT, bar_width, black_bar_height))
-
+        # Determine bar height for white and black based on score magnitude
+        if score_int >= 0:
+            white_bar_height = max_bar_height/2+max_bar_height/20*score_int
+            black_bar_height = max_bar_height-white_bar_height
+        else:
+            black_bar_height = max_bar_height/2+max_bar_height/20*abs(score_int)
+            white_bar_height = max_bar_height-black_bar_height
+        # Draw white evaluation bar at the bottom
+        pygame.draw.rect(screen, (255, 255, 255), pygame.Rect(SCREEN_WIDTH - bar_width, SCREEN_HEIGHT - NAVBAR_HEIGHT - white_bar_height, bar_width, white_bar_height))
+        # Draw black evaluation bar at the top
+        pygame.draw.rect(screen, (0, 0, 0), pygame.Rect(SCREEN_WIDTH - bar_width, NAVBAR_HEIGHT, bar_width, black_bar_height))
+    except:
+        pass
 # Function to save the game state to a file
 def save_game(board):
     with open("saved_game.txt", "w") as file:
@@ -198,18 +199,57 @@ def display_engine_input():
         return fen_input.strip()
     else:
         return None
+def whiterg():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    fen_input = simpledialog.askstring("White R square", f"Input the new R(Red) value of the white square")
+    if fen_input:
+        return int(fen_input.strip())
+    else:
+        return None
+def whitegg():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    fen_input = simpledialog.askstring("White G square", f"Input the new G(Green) value of the white square")
+    if fen_input:
+        return int(fen_input.strip())
+    else:
+        return None
+def whitebg():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    fen_input = simpledialog.askstring("White B square", f"Input the new B(Blue) value of the white square")
+    if fen_input:
+        return int(fen_input.strip())
+    else:
+        return None
+def blackrg():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    fen_input = simpledialog.askstring("Black R square", f"Input the new R(Red) value of the black square")
+    if fen_input:
+        return int(fen_input.strip())
+    else:
+        return None
+def blackgg():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    fen_input = simpledialog.askstring("Black G square", f"Input the new G(Green) value of the black square")
+    if fen_input:
+        return int(fen_input.strip())
+    else:
+        return None
+def blackbg():
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    fen_input = simpledialog.askstring("Black B square", f"Input the new B(Blue) value of the black square")
+    if fen_input:
+        return int(fen_input.strip())
+    else:
+        return None
+# Function to generate the PGN table
 
-# Add variables to track selected piece, valid moves, and selected piece position
-selected_piece = None
-valid_moves = []
-selected_piece_x = 0
-selected_piece_y = 0
-
-# Cache evaluation score and best move
-evaluation_score = None
-best_move = None
-
-# Main loop
+# Function to draw the PGN table on the left side of the screen
 chess_board = chess.Board()
 running = True
 while running:
@@ -248,11 +288,14 @@ while running:
                         valid_moves.clear()  # Clear selection after move
                         # Reanalyze position after move
                         result = engine.analyse(chess_board, chess.engine.Limit(time=0.1))
-                        evaluation_score = int(result["score"].relative.score())
-                        if chess_board.turn == False:
-                            evaluation_score  *= -1
-
+                        try:
+                            evaluation_score = int(result["score"].relative.score())
+                            if chess_board.turn == False:
+                                evaluation_score  *= -1
+                        except:
+                            evaluation_score = result["score"].relative.score()
                         best_move = result["pv"][0] if len(result["pv"]) > 0 else None
+
                 else:
                     selected_piece = None
                     valid_moves.clear()
@@ -295,17 +338,31 @@ while running:
                         f.write(engine_input)
                     se = engine_input
                     engine = chess.engine.SimpleEngine.popen_uci(f"engines/{engine_input}")
-
+            if event.key == pygame.K_r:
+                chess_board = chess.Board()
+            if event.key == pygame.K_c:
+                whiter = whiterg()
+                whiteg = whitegg()
+                whiteb = whitebg()
+                blackr = blackrg()
+                blackg = blackgg()
+                blackb = blackbg()
+                S = (whiter, whiteg, whiteb)
+                O = (blackr, blackg, blackb)
     screen.fill(WHITE)
     # Draw navbar
     pygame.draw.rect(screen, NAVBAR_COLOR, pygame.Rect(0, 0, SCREEN_WIDTH, NAVBAR_HEIGHT))
-    font = pygame.font.Font(None, 37)
+    font = pygame.font.Font(None, 22)
     load_text = font.render("Load Position(press 'l')", True, NAVBAR_TEXT_COLOR)
     engine_text = font.render("Select Engine(press 'e')", True, NAVBAR_TEXT_COLOR)
+    reset_text = font.render("Reset Board(press 'r')", True, NAVBAR_TEXT_COLOR)
+    color_text = font.render("Set Colors(press 'c')", True, NAVBAR_TEXT_COLOR)
     sengine_text = font.render(se, True, NAVBAR_TEXT_COLOR)
     screen.blit(load_text, (17, 10))
-    screen.blit(engine_text, (307, 10))
-    screen.blit(sengine_text, (607, 10))
+    screen.blit(engine_text, (185, 10))
+    screen.blit(reset_text, (360, 10))
+    screen.blit(color_text, (530, 10))
+    screen.blit(sengine_text, (675, 10))
     draw_board()
     draw_pieces(chess_board)
 
@@ -319,23 +376,27 @@ while running:
         screen.blit(piece_image, (selected_piece_x, selected_piece_y))
 
     # Draw arrow indicating best move
-    if best_move is not None:
-        start_pos = (chess.square_file(best_move.from_square) * SQUARE_SIZE + SQUARE_SIZE // 2, (7 - chess.square_rank(best_move.from_square)) * SQUARE_SIZE + SQUARE_SIZE // 2 + NAVBAR_HEIGHT)
-        end_pos = (chess.square_file(best_move.to_square) * SQUARE_SIZE + SQUARE_SIZE // 2, (7 - chess.square_rank(best_move.to_square)) * SQUARE_SIZE + SQUARE_SIZE // 2 + NAVBAR_HEIGHT)
-        draw_arrow(start_pos, end_pos)
+    try:
+        if best_move is not None:
+            start_pos = (chess.square_file(best_move.from_square) * SQUARE_SIZE + SQUARE_SIZE // 2, (7 - chess.square_rank(best_move.from_square)) * SQUARE_SIZE + SQUARE_SIZE // 2 + NAVBAR_HEIGHT)
+            end_pos = (chess.square_file(best_move.to_square) * SQUARE_SIZE + SQUARE_SIZE // 2, (7 - chess.square_rank(best_move.to_square)) * SQUARE_SIZE + SQUARE_SIZE // 2 + NAVBAR_HEIGHT)
+            draw_arrow(start_pos, end_pos)
 
-    # Draw evaluation score
-    if evaluation_score is not None:
-        font = pygame.font.Font(None, 36)
-        if evaluation_score>=0:
-            evaluation_text = font.render("Evaluation: +" + str(evaluation_score/100), True, RO)
-        else:
-            evaluation_text = font.render("Evaluation: " + str(evaluation_score/100), True, RO)
-        screen.blit(evaluation_text, (10, NAVBAR_HEIGHT))
+        # Draw evaluation score
+        if evaluation_score is not None:
+            font = pygame.font.Font(None, 27)
+            if evaluation_score>=0:
+                evaluation_text = font.render("+" + str(evaluation_score/100), True, BLACK)
+            else:
+                evaluation_text = font.render("" + str(evaluation_score/100), True, BLACK)
+            screen.blit(evaluation_text, (800, 900))
 
-    # Draw evaluation bar
-    if evaluation_score is not None:
-        draw_evaluation_bar(evaluation_score)
+        # Draw evaluation bar
+        if evaluation_score is not None:
+            draw_evaluation_bar(evaluation_score)
+    except:
+        pass
+    # Draw PGN table
 
     pygame.display.flip()
 
