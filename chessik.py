@@ -109,7 +109,7 @@ BLUE = (arrr, arrg, arrb)
 def draw_board():
     for row in range(BOARD_SIZE):
         for col in range(BOARD_SIZE):
-            color = WHITE if (row + col) % 2 == 0 else O
+            color = S if (row + col) % 2 == 0 else O
             pygame.draw.rect(screen, color, pygame.Rect(col * SQUARE_SIZE, row * SQUARE_SIZE + NAVBAR_HEIGHT, SQUARE_SIZE, SQUARE_SIZE))
 
 # Function to draw the pieces on the board
